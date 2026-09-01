@@ -1,0 +1,10 @@
+[project]
+name = "udacity-agentic-project-management-workflow"
+version = "0.1.0"
+requires-python = ">=3.13"
+dependencies = [
+    "numpy>=2.5.2,<3.0.0",
+    "openai>=3.6.0,<4.0.0",
+    "pandas>=3.0.5,<4.0.0",
+    "python-dotenv>=1.2.3,<2.0.0",
+]
