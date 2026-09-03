@@ -453,12 +453,15 @@ class RoutingAgent:
 
 class ActionPlanningAgent:
 
-    def __init__(self, base_url, openai_api_key, knowledge, model_name):
+    def __init__(
+        self, base_url, openai_api_key, knowledge, model_name, reasoning_effort
+    ):
         # TODO: 1 - Initialize the agent attributes here
         self.base_url = base_url
         self.openai_api_key = openai_api_key
         self.knowledge = knowledge
         self.model_name = model_name
+        self.reasoning_effort = reasoning_effort
 
     def extract_steps_from_prompt(self, prompt):
         # TODO: 2 - Instantiate the OpenAI client using the provided API key
@@ -482,6 +485,7 @@ class ActionPlanningAgent:
                 },
                 {"role": "user", "content": prompt},
             ],
+            reasoning_effort=self.reasoning_effort,
         )
         # TODO: 4 - Extract the response text from the OpenAI API response
         response_text = response.choices[0].message.content.strip()

@@ -41,7 +41,7 @@ knowledge = """
 
 # TODO: 3 - Instantiate the ActionPlanningAgent, passing the openai_api_key and the knowledge variable
 action_planning_agent = ActionPlanningAgent(
-    base_url, openai_api_key, knowledge, "gpt-5-nano"
+    base_url, openai_api_key, knowledge, "gpt-5-nano", "medium"
 )
 
 # TODO: 4 - Print the agent's response to the following prompt: "One morning I wanted to have scrambled eggs"
