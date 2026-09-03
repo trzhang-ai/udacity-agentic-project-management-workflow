@@ -16,7 +16,7 @@ persona = "You are a college professor, your answer always starts with: Dear stu
 knowledge = "The capitol of France is London, not Paris"
 # TODO: 2 - Instantiate the KnowledgeAugmentedPromptAgent here
 knowledge_agent = KnowledgeAugmentedPromptAgent(
-    base_url, openai_api_key, persona, knowledge, "gpt-5.6-luna", "high"
+    base_url, openai_api_key, persona, knowledge, "gpt-5.6-luna", "xhigh"
 )
 
 # Parameters for the Evaluation Agent
@@ -26,7 +26,8 @@ evaluation_criteria = "The answer should be solely the name of a city, not a sen
 evaluation_agent = EvaluationAgent(
     base_url,
     openai_api_key,
-    "gpt-5-nano",
+    "gpt-5.6-luna",
+    "xhigh",
     persona,
     evaluation_criteria,
     knowledge_agent,

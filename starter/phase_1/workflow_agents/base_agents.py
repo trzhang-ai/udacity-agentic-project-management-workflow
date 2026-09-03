@@ -320,6 +320,7 @@ class EvaluationAgent:
         base_url,
         openai_api_key,
         model_name,
+        reasoning_effort,
         persona,
         evaluation_criteria,
         worker_agent,
@@ -331,6 +332,7 @@ class EvaluationAgent:
         self.openai_api_key = openai_api_key
         self.model_name = model_name
         self.persona = persona
+        self.reasoning_effort = reasoning_effort
         self.evaluation_criteria = evaluation_criteria
         self.worker_agent = worker_agent
         self.max_interactions = max_interactions
@@ -361,6 +363,7 @@ class EvaluationAgent:
                 model=self.model_name,
                 # TODO: 5 - Define the message structure sent to the LLM for evaluation (use temperature=0)
                 messages=[{"role": "user", "content": eval_prompt}],
+                reasoning_effort=self.reasoning_effort,
                 temperature=1,
             )
             evaluation = response.choices[0].message.content.strip()
@@ -380,6 +383,7 @@ class EvaluationAgent:
                         {"role": "developer", "content": instruction_prompt},
                         {"role": "user", "content": prompt_to_evaluate},
                     ],
+                    reasoning_effort=self.reasoning_effort,
                     temperature=1,
                 )
                 instructions = response.choices[0].message.content.strip()
