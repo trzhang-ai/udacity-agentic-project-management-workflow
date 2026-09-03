@@ -4,12 +4,14 @@ from dotenv import load_dotenv
 
 # Load environment variables from .env file
 load_dotenv()
-
 # Define the parameters for the agent
+base_url = os.getenv("OPENAI_BASE_URL")
 openai_api_key = os.getenv("OPENAI_API_KEY")
 
 persona = "You are a college professor, yous answer always starts with: Dear students,"
-RAG_knowledge_prompt_agent = RAGKnowledgePromptAgent(openai_api_key, persona, 500, 200)
+RAG_knowledge_prompt_agent = RAGKnowledgePromptAgent(
+    base_url, openai_api_key, persona, "gpt-5-nano", "medium", 500, 200
+)
 
 knowledge_text = """
 In the historic city of Boston, Clara, a marine biologist and science communicator, began each morning analyzing sonar data to track whale migration patterns along the Atlantic coast.
