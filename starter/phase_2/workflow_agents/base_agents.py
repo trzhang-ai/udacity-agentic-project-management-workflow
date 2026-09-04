@@ -1,5 +1,3 @@
-# TODO: 1 - import the OpenAI class from the openai library
-from openai.types.responses import response
 import numpy as np
 import pandas as pd
 import re
@@ -9,12 +7,26 @@ from openai import OpenAI
 from datetime import datetime
 
 
+def _completion_options(model_name, reasoning_effort=None):
+    """Return only the generation options supported by the selected model.
+
+    GPT-3.5 Turbo is not a reasoning model, so the rubric-required submission
+    path uses ``temperature=0`` and deliberately omits ``reasoning_effort``.
+    Reusable agents can still pass a reasoning effort when configured with a
+    later reasoning-capable model.
+    """
+    if model_name == "gpt-3.5-turbo":
+        return {"temperature": 0}
+    if reasoning_effort is not None:
+        return {"reasoning_effort": reasoning_effort}
+    return {}
+
+
 # DirectPromptAgent class definition
 class DirectPromptAgent:
 
     def __init__(self, openai_api_key, base_url, model_name):
         # Initialize the agent
-        # TODO: 2 - Define an attribute named openai_api_key to store the OpenAI API key provided to this class.
         self.openai_api_key = openai_api_key
         self.base_url = base_url
         self.model_name = model_name
@@ -23,15 +35,10 @@ class DirectPromptAgent:
         # Generate a response using the OpenAI API
         client = OpenAI(base_url=self.base_url, api_key=self.openai_api_key)
         response = client.chat.completions.create(
-            # TODO: 3 - Specify the model to use
             model=self.model_name,
-            messages=[
-                # TODO: 4 - Provide the user's prompt here. Do not add a system prompt.
-                {"role": "user", "content": user_prompt}
-            ],
-            # temperature=0,
+            messages=[{"role": "user", "content": user_prompt}],
+            **_completion_options(self.model_name),
         )
-        # TODO: 5 - Return only the textual content of the response (not the full JSON response).
         content = response.choices[0].message.content.strip()
         return content
 
@@ -43,7 +50,6 @@ class AugmentedPromptAgent:
         """Initialize the agent with given attributes."""
         self.openai_api_key = openai_api_key
         self.base_url = base_url
-        # TODO: 1 - Create an attribute for the agent's persona
         self.persona = persona
         self.model_name = model_name
 
@@ -51,15 +57,13 @@ class AugmentedPromptAgent:
         """Generate a response using OpenAI API."""
         client = OpenAI(base_url=self.base_url, api_key=self.openai_api_key)
 
-        # TODO: 2 - Declare a variable 'response' that calls OpenAI's API for a chat completion.
         response = client.chat.completions.create(
             model=self.model_name,
             messages=[
-                # TODO: 3 - Add a system prompt instructing the agent to assume the defined persona and explicitly forget previous context.
                 # The code sends only the current persona and user message — not earlier messages —
                 # the model has no previous conversation available to remember.
                 {
-                    "role": "developer",
+                    "role": "system",
                     "content": (
                         f"{self.persona}\n"
                         "Forget all previous context.\n"
@@ -68,10 +72,9 @@ class AugmentedPromptAgent:
                 },
                 {"role": "user", "content": input_text},
             ],
-            # temperature=0,
+            **_completion_options(self.model_name),
         )
 
-        # TODO: 4 - Return only the textual content of the response, not the full JSON payload.
         content = response.choices[0].message.content.strip()
 
         return content
@@ -83,8 +86,6 @@ class KnowledgeAugmentedPromptAgent:
         self, base_url, openai_api_key, persona, knowledge, model_name, reasoning_effort
     ):
         """Initialize the agent with provided attributes."""
-        self.persona = persona
-        # TODO: 1 - Create an attribute to store the agent's knowledge.
         self.base_url = base_url
         self.openai_api_key = openai_api_key
         self.persona = persona
@@ -97,16 +98,9 @@ class KnowledgeAugmentedPromptAgent:
         client = OpenAI(base_url=self.base_url, api_key=self.openai_api_key)
         response = client.chat.completions.create(
             model=self.model_name,
-            # TODO: 2 - Construct a system message including:
-            #           - The persona with the following instruction:
-            #             "You are _persona_ knowledge-based assistant. Forget all previous context."
-            #           - The provided knowledge with this instruction:
-            #             "Use only the following knowledge to answer, do not use your own knowledge: _knowledge_"
-            #           - Final instruction:
-            #             "Answer the prompt based on this knowledge, not your own."
             messages=[
                 {
-                    "role": "developer",
+                    "role": "system",
                     "content": f"""
                         Role and default style:
                         {self.persona}
@@ -149,8 +143,7 @@ class KnowledgeAugmentedPromptAgent:
                     "content": input_text,
                 },
             ],
-            reasoning_effort=self.reasoning_effort,
-            # temperature=0,
+            **_completion_options(self.model_name, self.reasoning_effort),
         )
         return response.choices[0].message.content.strip()
 
@@ -241,30 +234,30 @@ class RAGKnowledgePromptAgent:
         text = re.sub(r"\s+", " ", text).strip()
 
         if len(text) <= self.chunk_size:
-            return [{"chunk_id": 0, "text": text, "chunk_size": len(text)}]
+            chunks = [{"chunk_id": 0, "text": text, "chunk_size": len(text)}]
+        else:
+            chunks, start, chunk_id = [], 0, 0
 
-        chunks, start, chunk_id = [], 0, 0
+            while start < len(text):
+                end = min(start + self.chunk_size, len(text))
+                if separator in text[start:end]:
+                    end = start + text[start:end].rindex(separator) + len(separator)
 
-        while start < len(text):
-            end = min(start + self.chunk_size, len(text))
-            if separator in text[start:end]:
-                end = start + text[start:end].rindex(separator) + len(separator)
+                chunks.append(
+                    {
+                        "chunk_id": chunk_id,
+                        "text": text[start:end],
+                        "chunk_size": end - start,
+                        "start_char": start,
+                        "end_char": end,
+                    }
+                )
 
-            chunks.append(
-                {
-                    "chunk_id": chunk_id,
-                    "text": text[start:end],
-                    "chunk_size": end - start,
-                    "start_char": start,
-                    "end_char": end,
-                }
-            )
+                if end >= len(text):
+                    break
 
-            if end >= len(text):
-                break
-
-            start = end - self.chunk_overlap
-            chunk_id += 1
+                start = end - self.chunk_overlap
+                chunk_id += 1
 
         with open(
             f"chunks-{self.unique_filename}", "w", newline="", encoding="utf-8"
@@ -312,7 +305,7 @@ class RAGKnowledgePromptAgent:
             model=self.model_name,
             messages=[
                 {
-                    "role": "developer",
+                    "role": "system",
                     "content": f"You are {self.persona}, a knowledge-based assistant. Forget previous context.",
                 },
                 {
@@ -320,8 +313,7 @@ class RAGKnowledgePromptAgent:
                     "content": f"Answer based only on this information: {best_chunk}. Prompt: {prompt}",
                 },
             ],
-            reasoning_effort=self.reasoning_effort,
-            # temperature=0,
+            **_completion_options(self.model_name, self.reasoning_effort),
         )
 
         return response.choices[0].message.content.strip()
@@ -341,7 +333,6 @@ class EvaluationAgent:
         max_interactions,
     ):
         # Initialize the EvaluationAgent with given attributes.
-        # TODO: 1 - Declare class attributes here
         self.base_url = base_url
         self.openai_api_key = openai_api_key
         self.model_name = model_name
@@ -356,13 +347,11 @@ class EvaluationAgent:
         client = OpenAI(base_url=self.base_url, api_key=self.openai_api_key)
         prompt_to_evaluate = initial_prompt
 
-        # TODO: 2 - Set loop to iterate up to the maximum number of interactions:
         for i in range(self.max_interactions):
             print(f"\n--- Interaction {i + 1} ---")
 
             print(" Step 1: Worker agent generates a response to the prompt")
             print(f"Prompt:\n{prompt_to_evaluate}")
-            # TODO: 3 - Obtain a response from the worker agent
             response_from_worker = self.worker_agent.respond(prompt_to_evaluate)
             print(f"Worker Agent Response:\n{response_from_worker}")
 
@@ -370,25 +359,21 @@ class EvaluationAgent:
             eval_prompt = (
                 f"Original task and supplied context:\n{initial_prompt}\n\n"
                 f"Candidate answer:\n{response_from_worker}\n\n"
-                # TODO: 4 - Insert evaluation criteria here
                 f"Evaluation criteria:\n{self.evaluation_criteria}\n\n"
                 "Evaluate both the required format and whether the candidate answer "
                 "is grounded in the original task and supplied context. "
+                "Judge only the stated criteria; do not invent extra requirements. "
+                "If every stated criterion is satisfied, the verdict must be Yes. "
                 "Begin with the plain-text word Yes or No, without Markdown, "
                 "then explain the reason."
             )
             response = client.chat.completions.create(
                 model=self.model_name,
-                # TODO: 5 - Define the message structure sent to the LLM for evaluation (use temperature=0)
                 messages=[
-                    {"role": "developer", "content": self.persona},
+                    {"role": "system", "content": self.persona},
                     {"role": "user", "content": eval_prompt},
                 ],
-                reasoning_effort=self.reasoning_effort,
-                # The starter rubric requests temperature=0 for gpt-3.5-turbo.
-                # GPT-5.6 Luna on the course endpoint rejects temperature=0,
-                # so this implementation uses the model's supported default.
-                temperature=1,
+                **_completion_options(self.model_name, self.reasoning_effort),
             )
             evaluation = response.choices[0].message.content.strip()
             print(f"Evaluator Agent Evaluation:\n{evaluation}")
@@ -407,20 +392,16 @@ class EvaluationAgent:
                     "Provide precise instructions for correcting the candidate answer. "
                     "The correction must remain grounded in the original task and "
                     "supplied context and must not introduce an unrelated product or "
-                    "placeholder example."
+                    "placeholder example. Return a short numbered checklist of changes, "
+                    "not a rewritten answer."
                 )
                 response = client.chat.completions.create(
                     model=self.model_name,
-                    # TODO: 6 - Define the message structure sent to the LLM to generate correction instructions (use temperature=0)
                     messages=[
-                        {"role": "developer", "content": instruction_prompt},
-                        {"role": "user", "content": prompt_to_evaluate},
+                        {"role": "system", "content": self.persona},
+                        {"role": "user", "content": instruction_prompt},
                     ],
-                    reasoning_effort=self.reasoning_effort,
-                    # The starter rubric requests temperature=0 for gpt-3.5-turbo.
-                    # GPT-5.6 Luna on the course endpoint rejects temperature=0,
-                    # so this implementation uses the model's supported default.
-                    temperature=1,
+                    **_completion_options(self.model_name, self.reasoning_effort),
                 )
                 instructions = response.choices[0].message.content.strip()
                 print(f"Instructions to fix:\n{instructions}")
@@ -432,14 +413,6 @@ class EvaluationAgent:
                     f"It has been evaluated as incorrect.\n"
                     f"Make only these corrections, do not alter content validity: {instructions}"
                 )
-        else:
-            raise RuntimeError(
-                "The worker response did not satisfy the evaluation criteria "
-                f"after {self.max_interactions} interactions. "
-                f"Last evaluation: {evaluation}"
-            )
-
-        # TODO: 7 - Return a dictionary containing the final response, evaluation, and number of iterations
         return {
             "final_response": response_from_worker,
             "evaluation": evaluation,
@@ -453,14 +426,11 @@ class RoutingAgent:
         # Initialize the agent with given attributes
         self.base_url = base_url
         self.openai_api_key = openai_api_key
-        # TODO: 1 - Define an attribute to hold the agents, call it agents
         self.agents = agents
 
     def get_embedding(self, text):
         client = OpenAI(base_url=self.base_url, api_key=self.openai_api_key)
-        # TODO: 2 - Write code to calculate the embedding of the text using the text-embedding-3-large model
-        # Extract and return the embedding vector from the response
-        if text.strip() == "" or text.strip() is None:
+        if text is None or not text.strip():
             return None
         else:
             response = client.embeddings.create(
@@ -468,15 +438,15 @@ class RoutingAgent:
             )
             return response.data[0].embedding
 
-    # TODO: 3 - Define a method to route user prompts to the appropriate agent
     def route(self, user_input):
-        # TODO: 4 - Compute the embedding of the user input prompt
         input_emb = self.get_embedding(user_input)
+        if input_emb is None:
+            return "Sorry, no suitable agent could be selected."
+
         best_agent = None
         best_score = -1
 
         for agent in self.agents:
-            # TODO: 5 - Compute the embedding of the agent description
             agent_emb = self.get_embedding(agent["description"])
             if agent_emb is None:
                 continue
@@ -486,7 +456,6 @@ class RoutingAgent:
             )
             print(similarity)
 
-            # TODO: 6 - Add logic to select the best agent based on the similarity score between the user prompt and the agent descriptions
             if similarity > best_score:
                 best_agent = agent
                 best_score = similarity
@@ -503,7 +472,6 @@ class ActionPlanningAgent:
     def __init__(
         self, base_url, openai_api_key, knowledge, model_name, reasoning_effort
     ):
-        # TODO: 1 - Initialize the agent attributes here
         self.base_url = base_url
         self.openai_api_key = openai_api_key
         self.knowledge = knowledge
@@ -511,16 +479,12 @@ class ActionPlanningAgent:
         self.reasoning_effort = reasoning_effort
 
     def extract_steps_from_prompt(self, prompt):
-        # TODO: 2 - Instantiate the OpenAI client using the provided API key
         client = OpenAI(base_url=self.base_url, api_key=self.openai_api_key)
-        # TODO: 3 - Call the OpenAI API to get a response from the "gpt-3.5-turbo" model.
-        # Provide the following system prompt along with the user's prompt:
-        # ""
         response = client.chat.completions.create(
             model=self.model_name,
             messages=[
                 {
-                    "role": "developer",
+                    "role": "system",
                     "content": f"""
                     You are an action planning agent. Using your knowledge,
                     you extract from the user prompt the steps requested to complete the action the user is asking for.
@@ -532,12 +496,10 @@ class ActionPlanningAgent:
                 },
                 {"role": "user", "content": prompt},
             ],
-            reasoning_effort=self.reasoning_effort,
+            **_completion_options(self.model_name, self.reasoning_effort),
         )
-        # TODO: 4 - Extract the response text from the OpenAI API response
         response_text = response.choices[0].message.content.strip()
 
-        # TODO: 5 - Clean and format the extracted steps by removing empty lines and unwanted text
         steps = [step.strip() for step in response_text.splitlines() if step.strip()]
 
         return steps
