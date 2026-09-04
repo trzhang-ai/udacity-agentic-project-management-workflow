@@ -58,7 +58,14 @@ class AugmentedPromptAgent:
                 # TODO: 3 - Add a system prompt instructing the agent to assume the defined persona and explicitly forget previous context.
                 # The code sends only the current persona and user message — not earlier messages —
                 # the model has no previous conversation available to remember.
-                {"role": "developer", "content": self.persona},
+                {
+                    "role": "developer",
+                    "content": (
+                        f"{self.persona}\n"
+                        "Forget all previous context.\n"
+                        "Use all context explicitly provided in the current request."
+                    ),
+                },
                 {"role": "user", "content": input_text},
             ],
             # temperature=0,
@@ -104,6 +111,11 @@ class KnowledgeAugmentedPromptAgent:
                         Role and default style:
                         {self.persona}
 
+                        Forget all previous context.
+                        Use all product specifications, workflow artifacts, and evaluator feedback
+                        explicitly included in the current request.
+                        Do not use other conversational history.
+
                         <external_knowledge>
                         {self.knowledge}
                         </external_knowledge>
@@ -112,7 +124,9 @@ class KnowledgeAugmentedPromptAgent:
 
                         1. Initial-answer mode
                         - If the user provides a normal question without evaluator feedback, answer
-                        using <external_knowledge> instead of your pretrained factual knowledge.
+                        using <external_knowledge> together with all product specifications and
+                        workflow artifacts explicitly included in the current request.
+                        - Do not use your pretrained factual knowledge.
                         - Follow the default persona and style.
 
                         2. Evaluator-revision mode
@@ -370,7 +384,8 @@ class EvaluationAgent:
             print(f"Evaluator Agent Evaluation:\n{evaluation}")
 
             print(" Step 3: Check if evaluation is positive")
-            if evaluation.lower().startswith("yes"):
+            normalized_evaluation = evaluation.strip().lstrip("*_`# ")
+            if normalized_evaluation.lower().startswith("yes"):
                 print("✅ Final solution accepted.")
                 break
             else:
