@@ -114,7 +114,7 @@ The system shall allow manual intervention to override automated processes when 
 Performance: The system shall process and classify incoming emails within 5 seconds of receipt.
 Reliability: The system shall maintain 99.9% uptime, ensuring continuous email processing capabilities.
 Scalability: The system shall handle a minimum of 10,000 emails per hour without degradation in performance.
-Security: 
+Security:
 Data Encryption: All emails, including stored and transmitted data, shall be encrypted using AES-256 encryption. TLS 1.2 or higher shall be used for secure communication between the Email Router and external email services.
 Access Control: Role-Based Access Control (RBAC) shall be implemented to restrict system access based on user roles. Multi-Factor Authentication (MFA) shall be required for administrative access.
 Data Privacy and Compliance: The system shall comply with GDPR, CCPA, and other relevant data protection regulations.

@@ -1,6 +1,8 @@
 [project]
-name = "udacity-agentic-project-management-workflow"
+name = "agentic-project-planning-workflow"
 version = "0.1.0"
+description = "A multi-agent planning prototype with semantic routing and evaluator-driven refinement"
+readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
     "numpy>=2.5.2,<3.0.0",
