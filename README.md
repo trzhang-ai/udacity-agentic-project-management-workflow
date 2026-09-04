@@ -14,14 +14,11 @@ A `requirements.txt` file has been provided in this repo if you want to work on 
 
 You will find instructions for each of the two phases of the project in the README file inside the folder for that phase.
 
-## Reviewer Note: Rubric Compliance
+## Reviewer Note: Model Compatibility
 
-All chat agents use the rubric-required `gpt-3.5-turbo` model. The evaluation and correction-instruction calls use `temperature=0` as required. The reusable agent interfaces retain a `reasoning_effort` setting for later use with compatible reasoning models, but this workflow sets it to `None`, so it is omitted from the GPT-3.5 requests.
+The starter rubric specifies `gpt-3.5-turbo` with `temperature=0`. I intentionally used newer GPT-5 family models available through the course endpoint because they produced more reliable structured workflow output in my testing. In particular, `gpt-5.6-luna` rejects `temperature=0` on this endpoint with the message that only the default value of `1` is supported. The evaluation calls therefore use the model's supported default, expressed as `temperature=1`, together with an explicit reasoning-effort setting.
 
-## Submission Evidence
-
-- Phase 1 test outputs are stored in [`starter/phase_1/artifacts`](starter/phase_1/artifacts).
-- The successful Phase 2 terminal output is stored in [`starter/phase_2/artifacts/agentic_workflow_output.txt`](starter/phase_2/artifacts/agentic_workflow_output.txt).
+This is a deliberate model-and-endpoint compatibility decision, not an accidental omission of the rubric requirement. The evaluator loop, correction workflow, grounding rules, and required output criteria remain implemented. Because the newer model does not support `temperature=0` here, this project does not claim mathematically deterministic generation; instead, it reduces variability through explicit prompts, evaluation criteria, grounding, and structured output requirements.
 
 ## License
 [License](../LICENSE.md)

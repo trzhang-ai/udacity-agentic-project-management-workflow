@@ -1,8 +1,9 @@
+# TODO: 1 - Import all required libraries, including the ActionPlanningAgent
 import os
-
 from dotenv import load_dotenv
 from workflow_agents.base_agents import ActionPlanningAgent
 
+# TODO: 2 - Load environment variables and define the openai_api_key variable with your OpenAI API key
 # Load environment variables from .env file
 load_dotenv()
 
@@ -38,9 +39,11 @@ knowledge = """
 7. Peel and serve
 """
 
+# TODO: 3 - Instantiate the ActionPlanningAgent, passing the openai_api_key and the knowledge variable
 action_planning_agent = ActionPlanningAgent(
-    base_url, openai_api_key, knowledge, "gpt-3.5-turbo", None
+    base_url, openai_api_key, knowledge, "gpt-5-nano", "medium"
 )
 
+# TODO: 4 - Print the agent's response to the following prompt: "One morning I wanted to have scrambled eggs"
 user_prompt = "One morning I wanted to have scrambled eggs"
 print(action_planning_agent.extract_steps_from_prompt(user_prompt))

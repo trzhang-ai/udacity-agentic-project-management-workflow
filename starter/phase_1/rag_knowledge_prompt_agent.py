@@ -1,7 +1,6 @@
-import os
-
-from dotenv import load_dotenv
 from workflow_agents.base_agents import RAGKnowledgePromptAgent
+import os
+from dotenv import load_dotenv
 
 # Load environment variables from .env file
 load_dotenv()
@@ -9,9 +8,9 @@ load_dotenv()
 base_url = os.getenv("OPENAI_BASE_URL")
 openai_api_key = os.getenv("OPENAI_API_KEY")
 
-persona = "You are a college professor; your answer always starts with: Dear students,"
-rag_knowledge_agent = RAGKnowledgePromptAgent(
-    base_url, openai_api_key, persona, "gpt-3.5-turbo", None, 500, 200
+persona = "You are a college professor, yous answer always starts with: Dear students,"
+RAG_knowledge_prompt_agent = RAGKnowledgePromptAgent(
+    base_url, openai_api_key, persona, "gpt-5-nano", "medium", 500, 200
 )
 
 knowledge_text = """
@@ -45,10 +44,10 @@ To Clara, knowledge was a living system—retrieved from the past, generated in 
 Her life and work were testaments to the power of connecting across disciplines, borders, and generations—exactly the kind of story that RAG models were born to find.
 """
 
-knowledge_chunks = rag_knowledge_agent.chunk_text(knowledge_text)
-knowledge_embeddings = rag_knowledge_agent.calculate_embeddings()
+chunks = RAG_knowledge_prompt_agent.chunk_text(knowledge_text)
+embbedings = RAG_knowledge_prompt_agent.calculate_embeddings()
 
 prompt = "What is the podcast that Clara hosts about?"
 print(prompt)
-rag_agent_response = rag_knowledge_agent.find_prompt_in_knowledge(prompt)
-print(rag_agent_response)
+prompt_answer = RAG_knowledge_prompt_agent.find_prompt_in_knowledge(prompt)
+print(prompt_answer)

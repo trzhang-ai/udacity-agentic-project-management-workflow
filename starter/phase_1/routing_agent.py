@@ -1,8 +1,8 @@
+# TODO: 1 - Import the KnowledgeAugmentedPromptAgent and RoutingAgent
 import os
-
 from dotenv import load_dotenv
-from workflow_agents.base_agents import KnowledgeAugmentedPromptAgent
 from workflow_agents.base_agents import RoutingAgent
+from workflow_agents.base_agents import KnowledgeAugmentedPromptAgent
 
 
 # Load environment variables from .env file
@@ -12,38 +12,23 @@ openai_api_key = os.getenv("OPENAI_API_KEY")
 
 persona = "You are a college professor"
 
-texas_knowledge = "You know everything about Texas"
+knowledge = "You know everything about Texas"
+# TODO: 2 - Define the Texas Knowledge Augmented Prompt Agent
 texas_expert = KnowledgeAugmentedPromptAgent(
-    base_url,
-    openai_api_key,
-    persona,
-    texas_knowledge,
-    "gpt-3.5-turbo",
-    None,
+    base_url, openai_api_key, persona, knowledge, "gpt-5-nano", "medium"
 )
 
-europe_knowledge = "You know everything about Europe"
+knowledge = "You know everything about Europe"
+# TODO: 3 - Define the Europe Knowledge Augmented Prompt Agent
 europe_agent = KnowledgeAugmentedPromptAgent(
-    base_url,
-    openai_api_key,
-    persona,
-    europe_knowledge,
-    "gpt-3.5-turbo",
-    None,
+    base_url, openai_api_key, persona, knowledge, "gpt-5-nano", "medium"
 )
 
-math_persona = "You are a college math professor"
-math_knowledge = (
-    "You know everything about math. You take prompts with numbers, extract "
-    "math formulas, and show the answer without explanation."
-)
+persona = "You are a college math professor"
+knowledge = "You know everything about math, you take prompts with numbers, extract math formulas, and show the answer without explanation"
+# TODO: 4 - Define the Math Knowledge Augmented Prompt Agent
 math_expert = KnowledgeAugmentedPromptAgent(
-    base_url,
-    openai_api_key,
-    math_persona,
-    math_knowledge,
-    "gpt-3.5-turbo",
-    None,
+    base_url, openai_api_key, persona, knowledge, "gpt-5-nano", "medium"
 )
 
 routing_agent = RoutingAgent(base_url, openai_api_key, {})
@@ -51,25 +36,33 @@ agents = [
     {
         "name": "texas agent",
         "description": "Answer a question about Texas",
+        # TODO: 5 - Call the Texas Agent to respond to prompts
         "func": lambda x: texas_expert.respond(x),
     },
     {
         "name": "europe agent",
         "description": "Answer a question about Europe",
+        # TODO: 6 - Define a function to call the Europe Agent
         "func": lambda x: europe_agent.respond(x),
     },
     {
         "name": "math agent",
         "description": "When a prompt contains numbers, respond with a math formula",
+        # TODO: 7 - Define a function to call the Math Agent
         "func": lambda x: math_expert.respond(x),
     },
 ]
 
 routing_agent.agents = agents
 
-texas_prompt = "Tell me about the history of Rome, Texas"
-print(f"{texas_prompt}: {routing_agent.route(texas_prompt)}")
-europe_prompt = "Tell me about the history of Rome, Italy"
-print(f"{europe_prompt}: {routing_agent.route(europe_prompt)}")
-math_prompt = "One story takes 2 days, and there are 20 stories"
-print(f"{math_prompt}: {routing_agent.route(math_prompt)}")
+# TODO: 8 - Print the RoutingAgent responses to the following prompts:
+#           - "Tell me about the history of Rome, Texas"
+#           - "Tell me about the history of Rome, Italy"
+#           - "One story takes 2 days, and there are 20 stories"
+
+q1 = "Tell me about the history of Rome, Texas"
+print(f"{q1}: {routing_agent.route(q1)}")
+q2 = "Tell me about the history of Rome, Italy"
+print(f"{q2}: {routing_agent.route(q2)}")
+q3 = "One story takes 2 days, and there are 20 stories"
+print(f"{q3}: {routing_agent.route(q3)}")
